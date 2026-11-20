@@ -21,3 +21,19 @@ class ClienteInvalidoError(SoftwareFJError):
 
 class ServicioInvalidoError(SoftwareFJError):
     """Se lanza cuando un servicio se crea con datos incorrectos."""
+
+
+class ServicioNoDisponibleError(SoftwareFJError):
+    """Se lanza cuando se intenta usar un servicio marcado como no disponible."""
+
+
+class ReservaInvalidaError(SoftwareFJError):
+    """Se lanza cuando una reserva tiene datos inválidos."""
+
+
+class OperacionNoPermitidaError(SoftwareFJError):
+    """Se lanza cuando se pide una operación que el estado actual no permite."""
+
+
+class CalculoInvalidoError(SoftwareFJError):
+    """Se lanza cuando los parámetros de un cálculo de costo son incorrectos."""  

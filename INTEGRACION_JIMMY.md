@@ -1,54 +1,59 @@
-# Aporte grupal de Jimmy
+# Alcance del aporte de Jimmy
 
-Base: main de lhoreniita26-ui/Software_FJ_Fase4, commit
-902ba4f5d8ebdca5abe403f96890a05580ff0280.
+## Reparto actualizado
 
-Se agregan entidad.py, servicios.py y reserva.py, con comentarios de las
-lineas y pruebas de contrato. excepciones.py y logger.py conservan el
-contenido publicado por Leidy. No se incluye la alternativa individual.
+Este aporte comprende sistema/servicios.py, sistema/reserva.py y sus pruebas de
+contrato. sistema/entidad.py corresponde a Leidy y se retira de los cambios de
+esta rama. excepciones.py y logger.py conservan los archivos de Leidy.
 
-## Contrato de integracion
+## Dependencias pendientes
 
-Cliente debe heredar de Entidad, llamar a super().__init__() o pasar un
-identificador y exponer nombre, documento y correo como textos no vacios.
-Debe implementar describir() y validar(). La validacion correcta puede devolver
-True o None y los datos incorrectos deben lanzar ClienteInvalidoError.
+Al revisar main, en el commit 902ba4f5d8ebdca5abe403f96890a05580ff0280, aun no
+estaban publicados entidad.py, cliente.py ni main.py. Los servicios, las reservas
+y las pruebas requieren la Entidad que debe incorporar Leidy. Por tanto, esta
+rama no es ejecutable por separado hasta integrar esa dependencia.
 
-Los imports admiten sistema como paquete y ejecucion desde su carpeta.
-Los atributos y los estados de Reserva se consultan con propiedades de lectura.
-Servicio.disponible puede modificarse con un valor booleano.
+Servicio y Reserva llaman a super().__init__() sin argumentos. Entidad debe
+proporcionar id y los metodos abstractos describir() y validar(). El Cliente real
+debe heredar de Entidad y exponer nombre, documento y correo; validar() puede
+devolver True o None cuando los datos son correctos, y debe lanzar un error de
+la jerarquia SoftwareFJError si falla. Este contrato debe verificarse con los
+archivos de Leidy cuando esten disponibles.
 
-## Costos
+## Costos y estados
 
-Tarifa por hora positiva; duracion positiva y finita. Tasas entre cero y uno.
+Tarifa por hora y duracion positivas y finitas; impuestos y descuentos entre 0 y 1.
 calcular_costo(2), calcular_costo(2, .19), calcular_costo(2, .19, .10).
 Con tarifa 100 los resultados son 200, 238 y 214.20.
 Formula: tarifa * horas * (1 - descuento) * (1 + impuesto).
-Se redondea al final a dos decimales. No se agregan cargos no acordados.
+El calculo intermedio usa Decimal y devuelve float tras redondear a dos decimales.
 
-## Estados y excepciones
+Reserva pasa de pendiente a confirmada y despues a procesada. Se puede cancelar
+mientras este pendiente o confirmada. Si falla el procesamiento, el estado y el
+costo se conservan; finally registra el cierre. main.py debera controlar las
+excepciones propagadas y continuar con las siguientes operaciones.
 
-Pendiente -> confirmada -> procesada. Se puede cancelar desde pendiente o confirmada.
-Procesada y cancelada son estados finales. Si falla un calculo, el estado y el costo
-no se modifican; puede corregirse el parametro y reintentarse.
-procesar() usa try/except/else/finally. Los errores se registran y se propagan con
-su tipo original; los calculos no representables encadenan la causa aritmetica.
-El controlador grupal debera aislar cada operacion y registrar los errores de
-creacion de clientes y servicios para completar la simulacion del anexo.
+## Verificacion
 
-## Verificacion y trabajo pendiente
+Las 19 pruebas aprobaron antes de retirar la Entidad inicialmente aportada por
+Jimmy. Ese resultado es historico: no acredita integracion con la Entidad de
+Leidy, que aun no estaba publicada. Las pruebas usan ClientePrueba como doble de
+prueba. Cuando Leidy publique Entidad, se debe ejecutar de nuevo:
 
-python -m unittest discover -s tests -v
+    python -m unittest discover -s tests -v
 
-Las 19 pruebas usan ClientePrueba como doble de prueba, no como cliente de produccion.
-Se prueban valores invalidos, costos, estados, disponibilidad, reintentos, logs y causas.
-Todavia no estan publicados cliente.py ni main.py: falta integrar esos archivos,
-la simulacion completa de al menos 10 operaciones y el informe grupal final.
+Tambien falta probar cliente.py, main.py y la simulacion grupal completa de al
+menos diez operaciones. La correccion de comentarios conserva el comportamiento
+de servicios.py, reserva.py y las pruebas; se comprueba mediante comparacion AST.
 
-## Publicacion y autoria
+## Historial y asistencia
 
-Este aporte se prepara para Jimmy1295 con asistencia de IA. Se publica mediante la
-integracion de GitHub y commits de la cuenta conectada. Esta publicacion no es
-evidencia de un git push ejecutado desde CMD; esa evidencia local queda pendiente.
-Los tres commits locales anteriores se conservan en la copia original y no se
-reescribe el historial de main. El pull request presenta el aporte para revision.
+El codigo inicial y esta correccion de documentacion se prepararon con asistencia
+de IA. Los tres
+commits originales y sus fechas se conservan; su envio desde CMD fue realizado
+por Jimmy y verificado en GitHub. Esta correccion registra un cambio real de
+alcance y documentacion, sin recrear una secuencia de desarrollo anterior.
+
+La implementacion personal por etapas que solicita la companera requiere el
+trabajo y las comprobaciones del estudiante. Estos archivos no se presentan como
+evidencia de haber escrito manualmente cada etapa del proyecto.

@@ -37,12 +37,15 @@ if not logger.handlers:
     logger.propagate = False
 
 
+# Función para registrar en el log las operaciones exitosas
 def registrar_evento(mensaje):
     """Registra un evento informativo (operación exitosa)."""
+    # Escribe el mensaje con nivel INFO
     logger.info(mensaje)
 
 
+# Función para registrar en el log las operaciones que fallaron
 def registrar_error(mensaje):
     """Registra un error (operación fallida)."""
+    # Escribe el mensaje con nivel ERROR
     logger.error(mensaje)
-    

@@ -58,7 +58,7 @@ class Servicio(Entidad):
         return True
 
     def _validar_calculo(self, horas, impuesto, descuento):
-        self.validar()  # Impide terminar la construccion con una tarifa o un nombre incorrectos.
+        self.validar()  # Revalida tambien los cargos de la especialidad.
         if not self.disponible:  # La disponibilidad se consulta de nuevo en cada calculo.
             raise ServicioNoDisponibleError(f'El servicio {self.nombre} no esta disponible.')
         if not _numero_valido(horas) or horas <= 0:  # No se permiten reservas de duracion nula, negativa o no finita.
@@ -68,10 +68,12 @@ class Servicio(Entidad):
                 raise CalculoInvalidoError(f'El {nombre} debe estar entre 0 y 1.')
         return True
 
-    def _costo_por_horas(self, horas, impuesto, descuento):
+    def _costo_por_horas(self, horas, impuesto, descuento, ajustar_subtotal=None):
         self.validar_parametros(horas, impuesto, descuento)
         try:
             subtotal = Decimal(str(self.precio_hora)) * Decimal(str(horas))  # Convierte desde texto para no incorporar la aproximacion binaria del float.
+            if ajustar_subtotal is not None:
+                subtotal = ajustar_subtotal(subtotal)  # Aplica la regla concreta dentro del manejo de errores aritmeticos.
             total = subtotal * (1 - Decimal(str(descuento))) * (1 + Decimal(str(impuesto)))  # Aplica primero el descuento y despues el impuesto.
             total = float(total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))  # Redondea al final y conserva el tipo float del contrato grupal.
             if not isfinite(total):
@@ -90,16 +92,34 @@ class Servicio(Entidad):
 
 
 class ReservaSala(Servicio):
-    '''Reserva de sala por horas, incluidas fracciones de hora.'''
+    '''Sala por horas con un cargo de limpieza fijo por reserva.'''
+
+    def __init__(self, nombre, precio_hora, disponible=True, *, cargo_limpieza=0):
+        self.__cargo_limpieza = cargo_limpieza
+        super().__init__(nombre, precio_hora, disponible)
+
+    @property
+    def cargo_limpieza(self):
+        return self.__cargo_limpieza
+
+    def validar(self):
+        super().validar()
+        if not _numero_valido(self.cargo_limpieza) or self.cargo_limpieza < 0:
+            raise ServicioInvalidoError('El cargo de limpieza debe ser no negativo y finito.')
+        return True
 
     def describir(self):
-        return f'Sala: {self.nombre} | Precio por hora: {self.precio_hora}'
+        return f'Sala: {self.nombre} | Precio por hora: {self.precio_hora} | Limpieza fija: {self.cargo_limpieza}'
 
     def validar_parametros(self, horas, impuesto=0, descuento=0):
         return self._validar_calculo(horas, impuesto, descuento)
 
     def calcular_costo(self, horas, impuesto=0, descuento=0):
-        return self._costo_por_horas(horas, impuesto, descuento)
+        # La limpieza se suma una sola vez, antes del descuento y del impuesto.
+        return self._costo_por_horas(
+            horas, impuesto, descuento,
+            ajustar_subtotal=lambda base: base + Decimal(str(self.cargo_limpieza)),
+        )
 
 
 class AlquilerEquipo(Servicio):

@@ -26,3 +26,25 @@ class Cliente(Entidad):
         self.__correo = correo.strip() if isinstance(correo, str) else correo
         # Valida los datos; si alguno es inválido, lanza ClienteInvalidoError
         self.validar()
+        
+    # Propiedad para leer el nombre sin poder modificarlo
+    @property
+    def nombre(self):
+        """Nombre del cliente (solo lectura)."""
+        # Devuelve el nombre privado
+        return self.__nombre
+
+    # Propiedad para leer el documento sin poder modificarlo
+    @property
+    def documento(self):
+        """Documento del cliente (solo lectura)."""
+        # Devuelve el documento privado
+        return self.__documento
+
+    # Propiedad para leer el correo sin poder modificarlo
+    @property
+    def correo(self):
+        """Correo del cliente (solo lectura)."""
+        # Devuelve el correo privado
+        return self.__correo
+    

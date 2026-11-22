@@ -332,4 +332,90 @@ except SoftwareFJError as error:
     # Registra el error en el log
     registrar_error(f"Operación 13 fallida: {error}")
     # Muestra el error
-    print("Error controlado:", error)        
+    print("Error controlado:", error)
+# Operación 14: cálculo inválido (impuesto fuera de rango)
+print("\n--- Operación 14: Cálculo inválido (impuesto = 5) ---")
+try:
+    # Calcula con un impuesto de 500% (debe fallar)
+    costo = servicios[0].calcular_costo(2, 5)
+    # Suma una operación exitosa
+    exitosas += 1
+    # Registra el éxito en el log
+    registrar_evento(f"Operación 14 exitosa: costo calculado {costo}")
+    # Muestra el resultado
+    print("OK:", costo)
+# Captura el error de cálculo inválido
+except SoftwareFJError as error:
+    # Suma una operación fallida
+    fallidas += 1
+    # Registra el error en el log
+    registrar_error(f"Operación 14 fallida: {error}")
+    # Muestra el error
+    print("Error controlado:", error)
+
+# Operación 15: tres formas de llamar calcular_costo (sobrecarga)
+print("\n--- Operación 15: Cálculo con distintos parámetros ---")
+try:
+    # Solo con horas
+    costo_a = servicios[0].calcular_costo(3)
+    # Con horas e impuesto
+    costo_b = servicios[0].calcular_costo(3, 0.19)
+    # Con horas, impuesto y descuento
+    costo_c = servicios[0].calcular_costo(3, 0.19, 0.10)
+    # Suma una operación exitosa
+    exitosas += 1
+    # Registra el éxito en el log
+    registrar_evento(f"Operación 15 exitosa: costos {costo_a}, {costo_b} y {costo_c}")
+    # Muestra los tres resultados
+    print("OK: solo horas =", costo_a, "| con impuesto =", costo_b, "| con impuesto y descuento =", costo_c)
+# Captura cualquier error de cálculo
+except SoftwareFJError as error:
+    # Suma una operación fallida
+    fallidas += 1
+    # Registra el error en el log
+    registrar_error(f"Operación 15 fallida: {error}")
+    # Muestra el error
+    print("Error controlado:", error)
+
+# Operación 16: excepción encadenada (cálculo con un valor desbordado)
+print("\n--- Operación 16: Excepción encadenada ---")
+try:
+    # Horas gigantes: el cálculo decimal falla internamente
+    costo = servicios[0].calcular_costo(1e30)
+    # Suma una operación exitosa
+    exitosas += 1
+    # Registra el éxito en el log
+    registrar_evento(f"Operación 16 exitosa: costo calculado {costo}")
+    # Muestra el resultado
+    print("OK:", costo)
+# Captura el error de negocio, que trae encadenada la causa original
+except SoftwareFJError as error:
+    # Suma una operación fallida
+    fallidas += 1
+    # Registra el error y su causa original en el log
+    registrar_error(f"Operación 16 fallida: {error} | causa: {error.__cause__!r}")
+    # Muestra el error
+    print("Error controlado:", error)
+    # Muestra la excepción original que quedó encadenada (__cause__)
+    print("Causa original:", type(error.__cause__).__name__)
+
+# Imprime el encabezado del resumen final
+print("\n=== RESUMEN FINAL ===")
+# Muestra cuántas operaciones salieron bien y cuántas fallaron
+print(f"Operaciones exitosas: {exitosas} | Operaciones fallidas: {fallidas}")
+# Muestra cuántos objetos hay en cada lista
+print(f"Clientes: {len(clientes)} | Servicios: {len(servicios)} | Reservas: {len(reservas)}")
+# Recorre los clientes guardados
+for cliente in clientes:
+    # Muestra la descripción de cada cliente
+    print("  Cliente:", cliente.describir())
+# Recorre los servicios guardados
+for servicio in servicios:
+    # Muestra la descripción de cada servicio
+    print("  Servicio:", servicio.describir())
+# Recorre las reservas guardadas
+for reserva in reservas:
+    # Muestra la descripción de cada reserva
+    print("  Reserva:", reserva.describir())
+# Deja constancia en el log de que terminó la simulación
+registrar_evento(f"=== Fin de la simulación: {exitosas} exitosas, {fallidas} fallidas ===")            

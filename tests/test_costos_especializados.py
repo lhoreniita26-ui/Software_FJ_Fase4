@@ -71,3 +71,53 @@ class EquipoEspecializadoTests(unittest.TestCase):
         reserva.confirmar()
         self.assertEqual(reserva.procesar(.19, .10), 224.91)
         self.assertEqual(reserva.estado, 'procesada')
+
+
+class AsesoriaEspecializadaTests(unittest.TestCase):
+    def test_recargo_por_cada_nivel(self):
+        for nivel, esperado in (('basico', 200), ('intermedio', 230), ('avanzado', 260)):
+            with self.subTest(nivel=nivel):
+                asesoria = Asesoria('Consulta', 100, nivel=nivel)
+                self.assertEqual(asesoria.calcular_costo(2), esperado)
+                self.assertIn(nivel, asesoria.describir())
+
+    def test_normalizar_nivel(self):
+        self.assertEqual(Asesoria('Consulta', 100, nivel=' BÁSICO ').nivel, 'basico')
+        self.assertEqual(Asesoria('Consulta', 100, nivel=' AVANZADO ').calcular_costo(2), 260)
+
+    def test_nivel_invalido(self):
+        for nivel in (None, '', 'experto', 1, True, object()):
+            with self.subTest(nivel=nivel):
+                with self.assertRaises(ServicioInvalidoError):
+                    Asesoria('Consulta', 100, nivel=nivel)
+
+    def test_nivel_y_recargo_son_de_solo_lectura(self):
+        asesoria = Asesoria('Consulta', 100, nivel='avanzado')
+        with self.assertRaises(AttributeError):
+            asesoria.nivel = 'basico'
+        with self.assertRaises(AttributeError):
+            asesoria.recargo_nivel = 0
+
+    def test_recargo_con_impuesto_y_descuento(self):
+        asesoria = Asesoria('Consulta', 100, nivel='avanzado')
+        self.assertEqual(asesoria.calcular_costo(2, .19, .10), 278.46)
+        self.assertEqual(asesoria.calcular_costo(2, descuento=1), 0)
+
+    def test_reserva_real_incluye_recargo(self):
+        cliente = Cliente('Ana Gomez', '123456', 'ana@example.com')
+        reserva = Reserva(cliente, Asesoria('Consulta', 100, nivel='avanzado'), 2)
+        reserva.confirmar()
+        self.assertEqual(reserva.procesar(.19, .10), 278.46)
+        self.assertEqual(reserva.estado, 'procesada')
+
+
+class PolimorfismoTests(unittest.TestCase):
+    def test_misma_llamada_despacha_tres_reglas_distintas(self):
+        servicios = [
+            ReservaSala('Sala', 100, cargo_limpieza=20),
+            AlquilerEquipo('Equipo', 100, tasa_seguro=.05),
+            Asesoria('Consulta', 100, nivel='avanzado'),
+        ]
+        self.assertEqual([s.calcular_costo(2, .19, .10) for s in servicios],
+                         [235.62, 224.91, 278.46])
+        self.assertTrue(all(s.validar_parametros(2, .19, .10) for s in servicios))

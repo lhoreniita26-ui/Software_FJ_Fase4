@@ -154,13 +154,37 @@ class AlquilerEquipo(Servicio):
 
 
 class Asesoria(Servicio):
-    '''Asesoria profesional facturada por horas.'''
+    '''Asesoria por horas cuyo recargo depende del nivel profesional.'''
+
+    __RECARGOS = {'basico': Decimal('0'), 'intermedio': Decimal('0.15'), 'avanzado': Decimal('0.30')}
+
+    def __init__(self, nombre, precio_hora, disponible=True, *, nivel='basico'):
+        self.__nivel = nivel.strip().casefold().replace('á', 'a') if isinstance(nivel, str) else nivel
+        super().__init__(nombre, precio_hora, disponible)
+
+    @property
+    def nivel(self):
+        return self.__nivel
+
+    @property
+    def recargo_nivel(self):
+        return self.__RECARGOS[self.nivel]
+
+    def validar(self):
+        super().validar()
+        if not isinstance(self.nivel, str) or self.nivel not in self.__RECARGOS:
+            raise ServicioInvalidoError('El nivel debe ser basico, intermedio o avanzado.')
+        return True
 
     def describir(self):
-        return f'Asesoria: {self.nombre} | Precio por hora: {self.precio_hora}'
+        return f'Asesoria: {self.nombre} | Precio por hora: {self.precio_hora} | Nivel: {self.nivel} | Recargo: {self.recargo_nivel * 100}%'
 
     def validar_parametros(self, horas, impuesto=0, descuento=0):
         return self._validar_calculo(horas, impuesto, descuento)
 
     def calcular_costo(self, horas, impuesto=0, descuento=0):
-        return self._costo_por_horas(horas, impuesto, descuento)
+        # Cada nivel aplica su porcentaje sobre las horas de asesoria contratadas.
+        return self._costo_por_horas(
+            horas, impuesto, descuento,
+            ajustar_subtotal=lambda base: base * (1 + self.recargo_nivel),
+        )

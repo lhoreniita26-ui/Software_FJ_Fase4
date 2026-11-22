@@ -67,3 +67,21 @@ class Cliente(Entidad):
         if len(self.__documento) < 6 or len(self.__documento) > 10:
             # Lanza el error si la longitud está fuera del rango permitido
             raise ClienteInvalidoError("El documento debe tener entre 6 y 10 dígitos.")
+        # El correo debe ser texto y tener exactamente una arroba
+        if not isinstance(self.__correo, str) or self.__correo.count("@") != 1:
+            # Lanza el error si no es texto o la cantidad de arrobas no es 1
+            raise ClienteInvalidoError("El correo debe tener una sola arroba (@).")
+        # Separa el correo en la parte antes y después de la arroba
+        usuario, dominio = self.__correo.split("@")
+        # El usuario no puede estar vacío y el dominio debe contener un punto
+        if not usuario or "." not in dominio:
+            # Lanza el error si falta el usuario o el punto del dominio
+            raise ClienteInvalidoError("El correo no tiene un formato válido.")
+        # Si pasó todas las validaciones, indica que los datos son correctos
+        return True
+    
+    # Método abstracto de Entidad: devuelve el resumen del cliente
+    def describir(self):
+        """Resumen del cliente."""
+        # Arma el texto con id, nombre, documento y correo
+        return f"[{self.id}] {self.__nombre} - Doc: {self.__documento} - {self.__correo}"

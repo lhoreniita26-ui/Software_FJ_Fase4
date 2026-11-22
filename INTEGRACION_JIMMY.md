@@ -15,17 +15,19 @@ Se calcula con Decimal y se devuelve float tras redondear a dos decimales con
 ROUND_HALF_UP. Se redondea una sola vez, al final.
 
 - ReservaSala: subtotal = tarifa * horas + cargo_limpieza.
-- AlquilerEquipo: subtotal = tarifa * horas.
+- AlquilerEquipo: subtotal = tarifa * horas * (1 + tasa_seguro).
 - Asesoria: subtotal = tarifa * horas.
 
 Total = subtotal * (1 - descuento) * (1 + impuesto).
 Los cargos adicionales tambien reciben el descuento y el impuesto.
 El cargo de limpieza es un importe fijo no negativo aplicado una vez por reserva.
+El seguro es una proporcion de 0 a 1: 0.05 significa el 5 % del alquiler.
 
 Las llamadas anteriores con nombre, tarifa y disponible mantienen su resultado:
-el cargo opcional vale cero por defecto. Los cargos se pasan por nombre:
+los cargos opcionales valen cero por defecto. Los cargos se pasan por nombre:
 
     ReservaSala('Sala', 100, cargo_limpieza=20)
+    AlquilerEquipo('Equipo', 100, tasa_seguro=0.05)
 
 calcular_costo conserva las variantes con horas, horas e impuesto, u horas,
 impuesto y descuento. describir() informa la regla particular del servicio.
@@ -41,7 +43,7 @@ El id entero pertenece a la Entidad de Leidy; se convierte a texto al describirl
 
     python -m unittest discover -s tests -v
 
-Etapa sala: 24 pruebas aprobadas (19 anteriores y 5 nuevas).
+Etapa equipo: 29 pruebas aprobadas (19 anteriores, 5 de sala y 5 de equipo).
 Las pruebas nuevas verifican cargos, redondeo, encapsulacion y reservas con el
 Cliente real publicado por Leidy. Falta la simulacion completa de al menos diez
 operaciones mediante main.py para dar por terminado el proyecto grupal.

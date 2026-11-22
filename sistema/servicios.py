@@ -123,16 +123,34 @@ class ReservaSala(Servicio):
 
 
 class AlquilerEquipo(Servicio):
-    '''Alquiler de equipos segun su tarifa por hora.'''
+    '''Alquiler por horas con seguro proporcional al valor del alquiler.'''
+
+    def __init__(self, nombre, precio_hora, disponible=True, *, tasa_seguro=0):
+        self.__tasa_seguro = tasa_seguro
+        super().__init__(nombre, precio_hora, disponible)
+
+    @property
+    def tasa_seguro(self):
+        return self.__tasa_seguro
+
+    def validar(self):
+        super().validar()
+        if not _numero_valido(self.tasa_seguro) or not 0 <= self.tasa_seguro <= 1:
+            raise ServicioInvalidoError('La tasa del seguro debe estar entre 0 y 1.')
+        return True
 
     def describir(self):
-        return f'Equipo: {self.nombre} | Precio por hora: {self.precio_hora}'
+        return f'Equipo: {self.nombre} | Precio por hora: {self.precio_hora} | Tasa de seguro: {self.tasa_seguro}'
 
     def validar_parametros(self, horas, impuesto=0, descuento=0):
         return self._validar_calculo(horas, impuesto, descuento)
 
     def calcular_costo(self, horas, impuesto=0, descuento=0):
-        return self._costo_por_horas(horas, impuesto, descuento)
+        # El seguro crece con el valor del alquiler, antes de descuento e impuesto.
+        return self._costo_por_horas(
+            horas, impuesto, descuento,
+            ajustar_subtotal=lambda base: base * (1 + Decimal(str(self.tasa_seguro))),
+        )
 
 
 class Asesoria(Servicio):

@@ -48,3 +48,14 @@ class Cliente(Entidad):
         # Devuelve el correo privado
         return self.__correo
     
+    # Método abstracto de Entidad: valida nombre, documento y correo
+    def validar(self):
+        """Verifica los datos; lanza ClienteInvalidoError si alguno es inválido."""
+        # El nombre debe ser texto y no estar vacío
+        if not isinstance(self.__nombre, str) or not self.__nombre:
+            # Lanza el error personalizado con un mensaje claro
+            raise ClienteInvalidoError("El nombre no puede estar vacío.")
+        # Sin contar los espacios, el nombre debe tener solo letras (admite tildes y ñ)
+        if not self.__nombre.replace(" ", "").isalpha():
+            # Lanza el error si hay números o símbolos en el nombre
+            raise ClienteInvalidoError("El nombre solo puede contener letras.")

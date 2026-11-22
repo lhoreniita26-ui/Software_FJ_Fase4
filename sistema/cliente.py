@@ -59,3 +59,11 @@ class Cliente(Entidad):
         if not self.__nombre.replace(" ", "").isalpha():
             # Lanza el error si hay números o símbolos en el nombre
             raise ClienteInvalidoError("El nombre solo puede contener letras.")
+        # El documento debe ser texto y contener solo dígitos
+        if not isinstance(self.__documento, str) or not self.__documento.isdigit():
+            # Lanza el error si no es texto o tiene caracteres que no son números
+            raise ClienteInvalidoError("El documento debe contener solo números.")
+        # El documento debe tener entre 6 y 10 dígitos
+        if len(self.__documento) < 6 or len(self.__documento) > 10:
+            # Lanza el error si la longitud está fuera del rango permitido
+            raise ClienteInvalidoError("El documento debe tener entre 6 y 10 dígitos.")

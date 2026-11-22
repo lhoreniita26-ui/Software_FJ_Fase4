@@ -1,61 +1,63 @@
-# Integración de los servicios y las reservas de Jimmy
+# Servicios y reservas de Jimmy
 
-## Reparto y base utilizada
+## Base y responsabilidades
 
-El aporte de Jimmy comprende sistema/servicios.py, sistema/reserva.py y sus pruebas.
-Entidad corresponde a Leidy. Su archivo se incorporó desde main mediante Fetch y
-Pull, conservando sus commits y sin modificar su contenido. La base de main
-verificada es edb0f505802ca5a013e53b8cb864d429dee396c4.
+Se trabaja sobre main, commit 50e641778a7a3cc3d29bfd82d7361b4e8ae72c4c, que incluye
+el PR anterior y el Cliente de Leidy. Entidad, Cliente, excepciones y logger
+conservan sus archivos y autoria. Jimmy modifica servicios, reservas y sus pruebas.
+main.py y la simulacion completa del grupo siguen pendientes de integracion.
 
-excepciones.py y logger.py también conservan los archivos de Leidy. La versión
-individual de respaldo no forma parte de esta integración.
+## Calculos especializados
 
-## Contrato confirmado de Entidad
+Todas las tarifas y duraciones deben ser positivas y finitas. Impuesto y descuento
+son proporciones entre 0 y 1. Los booleanos, el texto, NaN e infinitos se rechazan.
+Se calcula con Decimal y se devuelve float tras redondear a dos decimales con
+ROUND_HALF_UP. Se redondea una sola vez, al final.
 
-Entidad tiene un constructor sin parámetros, una propiedad id de solo lectura y
-los métodos abstractos describir() y validar(). Servicio y Reserva invocan
-super().__init__() sin argumentos e implementan ambos métodos. Servicio mantiene
-además calcular_costo() y validar_parametros() como contratos abstractos para sus
-clases concretas ReservaSala, AlquilerEquipo y Asesoria.
+- ReservaSala: subtotal = tarifa * horas + cargo_limpieza.
+- AlquilerEquipo: subtotal = tarifa * horas * (1 + tasa_seguro).
+- Asesoria: subtotal = tarifa * horas * (1 + recargo_nivel).
 
-La Entidad de Leidy asigna un id entero mediante un contador compartido. Las
-reservas lo incorporan a sus mensajes con formato de texto. Se adaptó una prueba
-para convertir el id mediante str() antes de buscarlo dentro de la descripción;
-esto evita imponer que la propiedad id tenga que devolver una cadena.
+Total = subtotal * (1 - descuento) * (1 + impuesto).
+Los cargos adicionales tambien reciben el descuento y el impuesto.
+El cargo de limpieza es un importe fijo no negativo aplicado una vez por reserva.
+El seguro es una proporcion de 0 a 1: 0.05 significa el 5 % del alquiler.
+La asesoria usa nivel basico (0 %), intermedio (15 %) o avanzado (30 %).
+Estos porcentajes son decisiones de implementacion, no valores impuestos por el anexo.
 
-## Costos y estados
+Las llamadas anteriores con nombre, tarifa y disponible mantienen su resultado:
+los cargos opcionales valen cero por defecto y la asesoria usa nivel basico. Los cargos se pasan por nombre:
 
-Tarifa por hora y duración positivas y finitas; impuestos y descuentos entre 0 y 1.
-calcular_costo(2), calcular_costo(2, .19), calcular_costo(2, .19, .10).
-Con tarifa 100 los resultados son 200, 238 y 214.20.
-Fórmula: tarifa * horas * (1 - descuento) * (1 + impuesto).
-El cálculo intermedio usa Decimal y devuelve float tras redondear a dos decimales.
+    ReservaSala('Sala', 100, cargo_limpieza=20)
+    AlquilerEquipo('Equipo', 100, tasa_seguro=0.05)
+    Asesoria('Consulta', 100, nivel='avanzado')
 
-Reserva pasa de pendiente a confirmada y después a procesada. Puede cancelarse
-mientras está pendiente o confirmada. Si falla el procesamiento, se conservan el
-estado y el costo; finally registra el cierre. main.py deberá controlar las
-excepciones propagadas y continuar con las siguientes operaciones.
+Con esas instancias, llamar calcular_costo(2, 0.19, 0.10) produce respectivamente
+235.62, 224.91 y 278.46. La misma llamada invoca una regla distinta segun la
+clase concreta: limpieza fija, seguro proporcional o recargo por nivel.
 
-## Verificación
+calcular_costo conserva las variantes con horas, horas e impuesto, u horas,
+impuesto y descuento. describir() informa la regla particular del servicio.
 
-Se ejecutan las 19 pruebas con la Entidad publicada por Leidy y sus módulos de
-excepciones y registro:
+## Reservas
+
+Reserva empieza pendiente, puede confirmarse y procesarse, o cancelarse desde
+pendiente o confirmada. Los errores conservan el estado anterior; else guarda
+el costo solo si el calculo termina correctamente y finally registra el cierre.
+El id entero pertenece a la Entidad de Leidy; se convierte a texto al describirlo.
+
+## Verificacion
 
     python -m unittest discover -s tests -v
 
-Resultado: 19 pruebas aprobadas. Las pruebas usan ClientePrueba como doble de
-prueba; no sustituyen al Cliente real. Todavía falta integrar cliente.py y main.py,
-que no estaban publicados en main al revisar la base indicada, y verificar la
-simulación grupal completa de al menos diez operaciones.
+Etapa asesoria: 36 pruebas aprobadas (19 anteriores, 5 de sala, 5 de equipo,
+6 de asesoria y 1 de despacho polimorfico).
+Las pruebas nuevas verifican cargos, redondeo, encapsulacion y reservas con el
+Cliente real publicado por Leidy. Falta la simulacion completa de al menos diez
+operaciones mediante main.py para dar por terminado el proyecto grupal.
 
 ## Historial y asistencia
 
-El aporte inicial y sus revisiones se prepararon con asistencia de IA. Los tres
-commits originales y sus fechas se conservan; Jimmy realizó su envío desde CMD
-y se verificó la rama en GitHub. Después se registraron correcciones reales de
-alcance, integración y compatibilidad, sin recrear una secuencia de desarrollo
-anterior. Los commits de Entidad conservan la autoría de Leidy.
-
-La implementación personal por etapas solicitada por la compañera requiere el
-trabajo y las comprobaciones del estudiante. Estos archivos no se presentan como
-evidencia de haber escrito manualmente cada etapa del proyecto.
+Los cambios y las pruebas se preparan con asistencia de IA y se registran en
+commits funcionales, conservando el historial previo y la autoria de Leidy.
+Cada resultado de pruebas corresponde a la etapa efectivamente ejecutada.

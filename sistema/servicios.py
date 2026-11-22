@@ -58,7 +58,7 @@ class Servicio(Entidad):
         return True
 
     def _validar_calculo(self, horas, impuesto, descuento):
-        self.validar()  # Impide terminar la construccion con una tarifa o un nombre incorrectos.
+        self.validar()  # Revalida tambien los cargos de la especialidad.
         if not self.disponible:  # La disponibilidad se consulta de nuevo en cada calculo.
             raise ServicioNoDisponibleError(f'El servicio {self.nombre} no esta disponible.')
         if not _numero_valido(horas) or horas <= 0:  # No se permiten reservas de duracion nula, negativa o no finita.
@@ -68,10 +68,12 @@ class Servicio(Entidad):
                 raise CalculoInvalidoError(f'El {nombre} debe estar entre 0 y 1.')
         return True
 
-    def _costo_por_horas(self, horas, impuesto, descuento):
+    def _costo_por_horas(self, horas, impuesto, descuento, ajustar_subtotal=None):
         self.validar_parametros(horas, impuesto, descuento)
         try:
             subtotal = Decimal(str(self.precio_hora)) * Decimal(str(horas))  # Convierte desde texto para no incorporar la aproximacion binaria del float.
+            if ajustar_subtotal is not None:
+                subtotal = ajustar_subtotal(subtotal)  # Aplica la regla concreta dentro del manejo de errores aritmeticos.
             total = subtotal * (1 - Decimal(str(descuento))) * (1 + Decimal(str(impuesto)))  # Aplica primero el descuento y despues el impuesto.
             total = float(total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))  # Redondea al final y conserva el tipo float del contrato grupal.
             if not isfinite(total):
@@ -90,39 +92,99 @@ class Servicio(Entidad):
 
 
 class ReservaSala(Servicio):
-    '''Reserva de sala por horas, incluidas fracciones de hora.'''
+    '''Sala por horas con un cargo de limpieza fijo por reserva.'''
+
+    def __init__(self, nombre, precio_hora, disponible=True, *, cargo_limpieza=0):
+        self.__cargo_limpieza = cargo_limpieza
+        super().__init__(nombre, precio_hora, disponible)
+
+    @property
+    def cargo_limpieza(self):
+        return self.__cargo_limpieza
+
+    def validar(self):
+        super().validar()
+        if not _numero_valido(self.cargo_limpieza) or self.cargo_limpieza < 0:
+            raise ServicioInvalidoError('El cargo de limpieza debe ser no negativo y finito.')
+        return True
 
     def describir(self):
-        return f'Sala: {self.nombre} | Precio por hora: {self.precio_hora}'
+        return f'Sala: {self.nombre} | Precio por hora: {self.precio_hora} | Limpieza fija: {self.cargo_limpieza}'
 
     def validar_parametros(self, horas, impuesto=0, descuento=0):
         return self._validar_calculo(horas, impuesto, descuento)
 
     def calcular_costo(self, horas, impuesto=0, descuento=0):
-        return self._costo_por_horas(horas, impuesto, descuento)
+        # La limpieza se suma una sola vez, antes del descuento y del impuesto.
+        return self._costo_por_horas(
+            horas, impuesto, descuento,
+            ajustar_subtotal=lambda base: base + Decimal(str(self.cargo_limpieza)),
+        )
 
 
 class AlquilerEquipo(Servicio):
-    '''Alquiler de equipos segun su tarifa por hora.'''
+    '''Alquiler por horas con seguro proporcional al valor del alquiler.'''
+
+    def __init__(self, nombre, precio_hora, disponible=True, *, tasa_seguro=0):
+        self.__tasa_seguro = tasa_seguro
+        super().__init__(nombre, precio_hora, disponible)
+
+    @property
+    def tasa_seguro(self):
+        return self.__tasa_seguro
+
+    def validar(self):
+        super().validar()
+        if not _numero_valido(self.tasa_seguro) or not 0 <= self.tasa_seguro <= 1:
+            raise ServicioInvalidoError('La tasa del seguro debe estar entre 0 y 1.')
+        return True
 
     def describir(self):
-        return f'Equipo: {self.nombre} | Precio por hora: {self.precio_hora}'
+        return f'Equipo: {self.nombre} | Precio por hora: {self.precio_hora} | Tasa de seguro: {self.tasa_seguro}'
 
     def validar_parametros(self, horas, impuesto=0, descuento=0):
         return self._validar_calculo(horas, impuesto, descuento)
 
     def calcular_costo(self, horas, impuesto=0, descuento=0):
-        return self._costo_por_horas(horas, impuesto, descuento)
+        # El seguro crece con el valor del alquiler, antes de descuento e impuesto.
+        return self._costo_por_horas(
+            horas, impuesto, descuento,
+            ajustar_subtotal=lambda base: base * (1 + Decimal(str(self.tasa_seguro))),
+        )
 
 
 class Asesoria(Servicio):
-    '''Asesoria profesional facturada por horas.'''
+    '''Asesoria por horas cuyo recargo depende del nivel profesional.'''
+
+    __RECARGOS = {'basico': Decimal('0'), 'intermedio': Decimal('0.15'), 'avanzado': Decimal('0.30')}
+
+    def __init__(self, nombre, precio_hora, disponible=True, *, nivel='basico'):
+        self.__nivel = nivel.strip().casefold().replace('á', 'a') if isinstance(nivel, str) else nivel
+        super().__init__(nombre, precio_hora, disponible)
+
+    @property
+    def nivel(self):
+        return self.__nivel
+
+    @property
+    def recargo_nivel(self):
+        return self.__RECARGOS[self.nivel]
+
+    def validar(self):
+        super().validar()
+        if not isinstance(self.nivel, str) or self.nivel not in self.__RECARGOS:
+            raise ServicioInvalidoError('El nivel debe ser basico, intermedio o avanzado.')
+        return True
 
     def describir(self):
-        return f'Asesoria: {self.nombre} | Precio por hora: {self.precio_hora}'
+        return f'Asesoria: {self.nombre} | Precio por hora: {self.precio_hora} | Nivel: {self.nivel} | Recargo: {self.recargo_nivel * 100}%'
 
     def validar_parametros(self, horas, impuesto=0, descuento=0):
         return self._validar_calculo(horas, impuesto, descuento)
 
     def calcular_costo(self, horas, impuesto=0, descuento=0):
-        return self._costo_por_horas(horas, impuesto, descuento)
+        # Cada nivel aplica su porcentaje sobre las horas de asesoria contratadas.
+        return self._costo_por_horas(
+            horas, impuesto, descuento,
+            ajustar_subtotal=lambda base: base * (1 + self.recargo_nivel),
+        )

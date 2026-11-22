@@ -29,3 +29,14 @@ class Entidad(ABC):
         """Identificador único de la entidad (solo lectura)."""
         # Devuelve el id privado
         return self.__id
+
+    # Método abstracto: cada subclase debe decir cómo se describe
+    @abstractmethod
+    def describir(self):
+        """Devuelve un texto que describe la entidad."""
+
+    # Método abstracto: cada subclase debe validar sus propios datos
+    @abstractmethod
+    def validar(self):
+        """Valida los datos; lanza una excepción si son inválidos."""
+               

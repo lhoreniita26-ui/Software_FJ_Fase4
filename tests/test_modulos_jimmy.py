@@ -108,7 +108,7 @@ class ReservaTests(unittest.TestCase):
         self.assertEqual(self.reserva.procesar(.19, .10), 214.20)
         self.assertEqual(self.reserva.estado, 'procesada')
         self.assertEqual(self.reserva.costo_total, 214.20)
-        self.assertIn(self.reserva.id, self.reserva.describir())
+        self.assertIn(str(self.reserva.id), self.reserva.describir())
         with self.assertRaises(AttributeError):
             self.reserva.estado = 'pendiente'
 

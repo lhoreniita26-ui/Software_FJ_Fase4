@@ -120,11 +120,12 @@ except SoftwareFJError as error:
     registrar_error(f"Operación 4 fallida: {error}")
     # Muestra el error
     print("Error controlado:", error)
+
 # Operación 5: sala válida
 print("\n--- Operación 5: Servicio válido (sala) ---")
 try:
-    # Crea la sala con nombre y precio por hora
-    sala = ReservaSala("Sala Ejecutiva", 50000)
+    # Crea la sala con nombre, precio por hora y cargo de limpieza fijo
+    sala = ReservaSala("Sala Ejecutiva", 50000, cargo_limpieza=20000)
     # La agrega a la lista de servicios
     servicios.append(sala)
     # Suma una operación exitosa
@@ -145,10 +146,10 @@ except SoftwareFJError as error:
 # Operación 6: equipo y asesoría válidos
 print("\n--- Operación 6: Servicios válidos (equipo y asesoría) ---")
 try:
-    # Crea el equipo con nombre y precio por hora
-    equipo = AlquilerEquipo("Proyector 4K", 20000)
-    # Crea la asesoría con nombre y precio por hora
-    asesoria = Asesoria("Asesoría en Datos", 80000)
+    # Crea el equipo con nombre, precio por hora y tasa de seguro del 10%
+    equipo = AlquilerEquipo("Proyector 4K", 20000, tasa_seguro=0.10)
+    # Crea la asesoría con nombre, precio por hora y nivel avanzado (recargo 30%)
+    asesoria = Asesoria("Asesoría en Datos", 80000, nivel="avanzado")
     # Agrega ambos a la lista de servicios
     servicios.extend([equipo, asesoria])
     # Suma una operación exitosa
@@ -189,11 +190,11 @@ except SoftwareFJError as error:
     # Muestra el error
     print("Error controlado:", error)
 
-# Operación 8: servicio inválido (nombre vacío)
-print("\n--- Operación 8: Servicio inválido (nombre vacío) ---")
+# Operación 8: servicio inválido (nivel inexistente)
+print("\n--- Operación 8: Servicio inválido (nivel inexistente) ---")
 try:
-    # Intenta crear la asesoría con el nombre vacío (debe fallar)
-    asesoria_mala = Asesoria("", 60000)
+    # Intenta crear la asesoría con un nivel que no existe (debe fallar)
+    asesoria_mala = Asesoria("Asesoría X", 60000, nivel="experto")
     # Solo llega aquí si no falló
     servicios.append(asesoria_mala)
     # Suma una operación exitosa
@@ -210,6 +211,7 @@ except SoftwareFJError as error:
     registrar_error(f"Operación 8 fallida: {error}")
     # Muestra el error
     print("Error controlado:", error)
+
 # Operación 9: reserva exitosa (crear, confirmar y procesar)
 print("\n--- Operación 9: Reserva exitosa ---")
 try:
@@ -333,6 +335,7 @@ except SoftwareFJError as error:
     registrar_error(f"Operación 13 fallida: {error}")
     # Muestra el error
     print("Error controlado:", error)
+
 # Operación 14: cálculo inválido (impuesto fuera de rango)
 print("\n--- Operación 14: Cálculo inválido (impuesto = 5) ---")
 try:
@@ -377,15 +380,37 @@ except SoftwareFJError as error:
     # Muestra el error
     print("Error controlado:", error)
 
-# Operación 16: excepción encadenada (cálculo con un valor desbordado)
-print("\n--- Operación 16: Excepción encadenada ---")
+# Operación 16: polimorfismo (mismo método, resultado distinto en cada servicio)
+print("\n--- Operación 16: Polimorfismo en calcular_costo ---")
+try:
+    # Recorre la lista: cada servicio resuelve calcular_costo a su manera
+    for servicio in servicios:
+        # Calcula 2 horas con 19% de impuesto en el servicio actual
+        costo = servicio.calcular_costo(2, 0.19)
+        # Muestra el servicio y su costo
+        print("OK:", servicio.describir(), "-> costo:", costo)
+    # Suma una operación exitosa
+    exitosas += 1
+    # Registra el éxito en el log
+    registrar_evento("Operación 16 exitosa: costo calculado con polimorfismo en todos los servicios")
+# Captura cualquier error de cálculo
+except SoftwareFJError as error:
+    # Suma una operación fallida
+    fallidas += 1
+    # Registra el error en el log
+    registrar_error(f"Operación 16 fallida: {error}")
+    # Muestra el error
+    print("Error controlado:", error)
+
+# Operación 17: excepción encadenada (cálculo con un valor desbordado)
+print("\n--- Operación 17: Excepción encadenada ---")
 try:
     # Horas gigantes: el cálculo decimal falla internamente
     costo = servicios[0].calcular_costo(1e30)
     # Suma una operación exitosa
     exitosas += 1
     # Registra el éxito en el log
-    registrar_evento(f"Operación 16 exitosa: costo calculado {costo}")
+    registrar_evento(f"Operación 17 exitosa: costo calculado {costo}")
     # Muestra el resultado
     print("OK:", costo)
 # Captura el error de negocio, que trae encadenada la causa original
@@ -393,7 +418,7 @@ except SoftwareFJError as error:
     # Suma una operación fallida
     fallidas += 1
     # Registra el error y su causa original en el log
-    registrar_error(f"Operación 16 fallida: {error} | causa: {error.__cause__!r}")
+    registrar_error(f"Operación 17 fallida: {error} | causa: {error.__cause__!r}")
     # Muestra el error
     print("Error controlado:", error)
     # Muestra la excepción original que quedó encadenada (__cause__)
@@ -418,4 +443,4 @@ for reserva in reservas:
     # Muestra la descripción de cada reserva
     print("  Reserva:", reserva.describir())
 # Deja constancia en el log de que terminó la simulación
-registrar_evento(f"=== Fin de la simulación: {exitosas} exitosas, {fallidas} fallidas ===")            
+registrar_evento(f"=== Fin de la simulación: {exitosas} exitosas, {fallidas} fallidas ===")  
